@@ -35,7 +35,7 @@ export type CourseListItem = {
 export type CourseLesson = {
   id: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   orderIndex: number;
   duration: number;
   progress: LessonProgress | null;

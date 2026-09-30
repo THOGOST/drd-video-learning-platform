@@ -55,11 +55,50 @@ bun run dev            # http://localhost:3000
 
 1. شغّل `supabase/schema.sql` في SQL Editor بـ Supabase (ينشئ 8 جداول + الفهارس + Triggers)
 2. شغّل `supabase/seed.sql` (بيانات تجريبية كاملة + حسابات مشفرة بنفس خوارزمية scrypt)
-3. أضف متغيرات البيئة (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, …) — انظر `.env.example`
+3. أضف متغيرات البيئة (`DATABASE_URL`, `SESSION_SECRET`, …) — انظر `.env.example`
 4. تحقق من الربط من داخل المنصة: **لوحة الإدارة → قاعدة البيانات**
-5. (اختياري) حوّل Prisma إلى PostgreSQL بتغيير `provider` في `prisma/schema.prisma`
+5. توليد Prisma Client لـ PostgreSQL يتم **تلقائيًا** على Vercel عبر `scripts/prisma-generate.js` (مخطط `prisma/schema.postgres.prisma` المطابق حرفيًا لـ `supabase/schema.sql`)
 
 الدليل الكامل خطوة بخطوة: [`supabase/README.md`](supabase/README.md)
+
+## ▲ النشر على Vercel
+
+المشروع مهيأ مسبقًا لـ Vercel (مخطط PostgreSQL تلقائي + فهرسة بيانات بيئة الإنتاج):
+
+### الخطوات
+
+1. **Supabase**: شغّل `supabase/schema.sql` ثم `supabase/seed.sql` في SQL Editor
+2. **Supabase**: انسخ Connection String (منفذ **6543** Transaction Pooler) من Project Settings → Database
+3. **Vercel**: أضف متغيرات البيئة التالية في Settings → Environment Variables (للبيئات الثلاث):
+
+   | المتغير | القيمة |
+   |---|---|
+   | `DATABASE_URL` | `postgresql://postgres.PROJECT_REF:[PASSWORD]@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1` |
+   | `SESSION_SECRET` | سلسلة عشوائية طويلة (`openssl rand -base64 32`) |
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://PROJECT_REF.supabase.co` (اختياري) |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | مفتاح anon (اختياري) |
+
+4. **Vercel**: Redeploy — البناء يولّد Prisma Client لـ PostgreSQL تلقائيًا
+5. **تحقق**: افتح الموقع ← سجل الدخول بالحسابات التجريبية ← لوحة الإدارة → قاعدة البيانات
+
+### كيف يعمل النشر تلقائيًا؟
+
+```
+Git Push → GitHub → Vercel (Auto Deploy)
+  ├─ postinstall / build → scripts/prisma-generate.js
+  │    └─ متغير VERCEL موجود؟ → توليد Prisma Client من schema.postgres.prisma
+  │    └─ محليًا؟            → توليد Prisma Client من schema.sqlite.prisma
+  └─ next build → نشر الموقع
+```
+
+### استكشاف الأخطاء
+
+| المشكلة | الحل |
+|---|---|
+| `Environment variable not found: DATABASE_URL` | أضف المتغير في Vercel ثم Redeploy |
+| `the URL must start with the protocol postgresql://` | DATABASE_URL لا يزال بصيغة `file:` — ضع رابط Supabase Pooler |
+| `Can't reach database server` | استخدم منفذ 6543 (Pooler) وليس 5432، وتأكد من كلمة المرور |
+| تسجيل الدخول يفشل بعد النشر | شغّل `supabase/seed.sql` لإنشاء الحسابات التجريبية |
 
 ## 🏗️ البنية التقنية
 
@@ -68,7 +107,7 @@ bun run dev            # http://localhost:3000
 | Framework | Next.js 16 (App Router) + TypeScript 5 |
 | الواجهة | Tailwind CSS 4 + shadcn/ui + framer-motion + Recharts |
 | الحالة | Zustand (عميل) + TanStack Query (سيرفر) |
-| قاعدة البيانات | Prisma ORM (SQLite → PostgreSQL/Supabase جاهز) |
+| قاعدة البيانات | Prisma ORM (SQLite محليًا → PostgreSQL/Supabase تلقائيًا على Vercel) |
 | المصادقة | scrypt + جلسات HMAC-SHA256 في httpOnly cookies |
 | الصلاحيات | ADMIN / STUDENT محمية على السيرفر (FR-13) |
 
@@ -81,8 +120,9 @@ src/
 │   ├── views/          # صفحات التطبيق (home, courses, lesson, dashboard, admin/**)
 │   └── ui/             # مكونات shadcn/ui
 ├── lib/                # auth, client, router (Hash SPA), supabase, workflow
-prisma/                 # schema.prisma + seed.ts
+prisma/                 # schema.sqlite.prisma (محلي) + schema.postgres.prisma (Vercel) + seed.ts
 supabase/               # schema.sql + seed.sql + دليل الربط
+scripts/prisma-generate.js  # توليد العميل حسب البيئة تلقائيًا
 ```
 
 ## 📄 الوثائق المرجعية

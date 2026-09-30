@@ -1,0 +1,147 @@
+// DRD — Video Learning Platform Schema (PostgreSQL / Supabase)
+// ─────────────────────────────────────────────────────────────
+// هذه النسخة تُستخدم على Vercel (الإنتاج) وتتطابق حرفيًا مع
+// supabase/schema.sql (أسماء الجداول والأعمدة snake_case).
+// النسخة المحلية للتطوير: prisma/schema.sqlite.prisma
+// التوليد التلقائي حسب البيئة: scripts/prisma-generate.js
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── users: بيانات المستخدمين والصلاحيات ───
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("STUDENT") // ADMIN | STUDENT
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  enrollments CourseEnrollment[]
+  progress    Progress[]
+
+  @@map("users")
+}
+
+// ─── courses: الكورسات ───
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?
+  thumbnail   String?
+  status      String   @default("PUBLISHED") // DRAFT | PUBLISHED | ARCHIVED
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  lessons     Lesson[]
+  enrollments CourseEnrollment[]
+
+  @@map("courses")
+}
+
+// ─── lessons: الدروس والفيديوهات ───
+model Lesson {
+  id          String   @id @default(cuid())
+  courseId    String   @map("course_id")
+  title       String
+  description String?
+  orderIndex  Int      @default(0) @map("order_index")
+  duration    Int      @default(0) // بالثواني
+  driveFileId String?  @map("drive_file_id") // Google Drive File ID (FR-12)
+  videoUrl    String?  @map("video_url") // رابط فيديو مباشر
+  videoSource String   @default("direct") @map("video_source") // direct | drive
+  status      String   @default("PUBLISHED") // DRAFT | PUBLISHED
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  links    LessonLink[]
+  progress Progress[]
+
+  @@index([courseId, orderIndex], map: "lessons_course_order_idx")
+  @@map("lessons")
+}
+
+// ─── lesson_links: الروابط والموارد الإضافية ───
+model LessonLink {
+  id        String   @id @default(cuid())
+  lessonId  String   @map("lesson_id")
+  title     String
+  url       String
+  type      String   @default("link") // link | file | github | doc
+  createdAt DateTime @default(now()) @map("created_at")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId], map: "lesson_links_lesson_idx")
+  @@map("lesson_links")
+}
+
+// ─── progress: تقدم المستخدم (نظام حفظ التقدم — القسم 11) ───
+model Progress {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  lessonId        String   @map("lesson_id")
+  lastPosition    Int      @default(0) @map("last_position") // آخر ثانية مشاهدة
+  progressPercent Int      @default(0) @map("progress_percent") // 0 → 100
+  completed       Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId], map: "progress_user_lesson_uniq")
+  @@map("progress")
+}
+
+// ─── course_enrollments: ربط المستخدم بالكورس ───
+model CourseEnrollment {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  courseId  String   @map("course_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId], map: "enrollment_user_course_uniq")
+  @@map("course_enrollments")
+}
+
+// ─── سجل الأنشطة والأخطاء (القسم 6: Logging) ───
+model ActivityLog {
+  id        String   @id @default(cuid())
+  actorId   String?  @map("actor_id")
+  actorName String?  @map("actor_name")
+  action    String   // LOGIN | REGISTER | COURSE_CREATE | LESSON_UPDATE | WORKFLOW_RUN ...
+  entity    String?  // course | lesson | link | user | workflow
+  entityId  String?  @map("entity_id")
+  detail    String?
+  level     String   @default("INFO") // INFO | WARN | ERROR
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt], map: "activity_logs_created_idx")
+  @@map("activity_logs")
+}
+
+// ─── سجل تشغيلات الـ Workflow (القسم 12) ───
+model WorkflowRun {
+  id        String   @id @default(cuid())
+  name      String
+  status    String   @default("SUCCESS") // SUCCESS | WARNING | FAILED
+  result    String? // JSON
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("workflow_runs")
+}
