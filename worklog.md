@@ -75,3 +75,23 @@ Stage Summary:
 - الكوميت جاهز محليًا: 25bc063 "deploy: تهيئة النشر على Vercel" (7 ملفات)
 - المشروع deployment-ready بالكامل — ينتظر فقط: git push (يحتاج توكن من المستخدم) ثم إضافة DATABASE_URL و SESSION_SECRET في Vercel
 - الفيديوهات (18MB) متتبعة في Git وتستوفي حدود Vercel
+
+---
+Task ID: 4
+Agent: Main Agent (Super Z)
+Task: الدفع إلى GitHub والتحقق الكامل من نشر Vercel مع بيانات Supabase الحقيقية
+
+Work Log:
+- فحص Supabase عبر REST بالمفاتيح الحقيقية: الجداول موجودة والبيانات مزروعة (usr_admin_01, crs_js_01, lsn_js_01) — المستخدم شغّل schema.sql و seed.sql
+- Push ناجح: 25839f5..bf84e7d ثم كوميت إصلاح 7c9563a
+- اكتشاف عبر GitHub API: مشروعان على Vercel يراقبان نفس الريبو: teamcours + drd-video-learning-platform (حساب farss-hany)
+- مراقبة البناء: كلا المشروعين success على كوميت 7c9563a
+- إنتاج مباشر: teamcours.vercel.app (200 + عنوان عربي RTL صحيح) و drd-video-learning-platform.vercel.app (200 + عنوان صحيح)
+- تشخيص "connection: failed": Supabase قيّد endpoint الجذر /rest/v1/ على service_role فقط، وفحصنا كان يفضل anon → إنذار كاذب؛ أصلحنا الأولوية إلى serviceKey أولاً
+- ملاحظة RLS: anon على courses يرجع [] (RLS مفعّل على بعض الجداول) — لا يؤثر على التطبيق لأنه يتصل عبر Prisma/DATABASE_URL
+- بعد الإصلاح والنشر: /api/supabase/status على الإنتاج = connection: ok | dbUrl: False
+
+Stage Summary:
+- الموقعان منشوران ويعملان: https://teamcours.vercel.app و https://drd-video-learning-platform.vercel.app
+- كل شيء أخضر عدا: DATABASE_URL و SESSION_SECRET غير مضافين في Vercel (dbUrl: False) — مسارات API التي تمس قاعدة البيانات ترجع 500 حتى يضاف DATABASE_URL (بكلمة مرور DB التي يعرفها المستخدم فقط)
+- التوكن والمفاتيح استُخدمت في الجلسة فقط ولم تُكتب في أي ملف متتبع
