@@ -3,8 +3,10 @@
 // الهيكل الرئيسي للتطبيق — يبدّل بين الصفحات داخليًا وفق الموجّه (القسم 13)
 
 import { useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GraduationCap } from "lucide-react";
+import { PageTransition } from "@/components/motion/animated";
 import { Navbar } from "@/components/navbar";
 import { HomeView } from "@/components/views/home-view";
 import { CoursesView } from "@/components/views/courses-view";
@@ -75,43 +77,67 @@ export function AppShell() {
       <div className="min-h-screen flex flex-col">
         <Navbar />
       <main className="flex-1">
+        <AnimatePresence mode="wait">
         {loading ? (
-          <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3 text-muted-foreground">
-              <div className="size-10 rounded-full border-3 border-primary/20 border-t-primary animate-spin border-[3px]" />
-              <p className="text-sm">جارٍ التحميل…</p>
-            </div>
-          </div>
-        ) : route.view === "home" ? (
-          <HomeView />
-        ) : route.view === "courses" ? (
-          <CoursesView />
-        ) : route.view === "course" ? (
-          <CourseDetailsView slug={route.slug} />
-        ) : route.view === "lesson" ? (
-          <LessonView slug={route.slug} lessonId={route.lessonId} />
-        ) : route.view === "dashboard" ? (
-          <DashboardView />
-        ) : route.view === "login" ? (
-          <LoginView redirect={route.redirect} />
-        ) : route.view === "register" ? (
-          <RegisterView redirect={route.redirect} />
-        ) : route.view === "admin" ? (
-          user?.role === "ADMIN" ? (
-            <AdminView tab={route.tab} />
-          ) : (
-            <div className="min-h-[60vh] flex items-center justify-center px-4">
-              <div className="text-center space-y-2">
-                <p className="text-lg font-bold">غير مصرح</p>
-                <p className="text-sm text-muted-foreground">
-                  هذه الصفحة مخصصة لمديري المنصة فقط.
-                </p>
+          <PageTransition routeKey="loading">
+            <div className="min-h-[60vh] flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <div className="size-10 rounded-full border-3 border-primary/20 border-t-primary animate-spin border-[3px]" />
+                <p className="text-sm">جارٍ التحميل…</p>
               </div>
             </div>
+          </PageTransition>
+        ) : route.view === "home" ? (
+          <PageTransition routeKey="home">
+            <HomeView />
+          </PageTransition>
+        ) : route.view === "courses" ? (
+          <PageTransition routeKey="courses">
+            <CoursesView />
+          </PageTransition>
+        ) : route.view === "course" ? (
+          <PageTransition routeKey={`course-${route.slug}`}>
+            <CourseDetailsView slug={route.slug} />
+          </PageTransition>
+        ) : route.view === "lesson" ? (
+          <PageTransition routeKey={`lesson-${route.slug}-${route.lessonId}`}>
+            <LessonView slug={route.slug} lessonId={route.lessonId} />
+          </PageTransition>
+        ) : route.view === "dashboard" ? (
+          <PageTransition routeKey="dashboard">
+            <DashboardView />
+          </PageTransition>
+        ) : route.view === "login" ? (
+          <PageTransition routeKey="login">
+            <LoginView redirect={route.redirect} />
+          </PageTransition>
+        ) : route.view === "register" ? (
+          <PageTransition routeKey="register">
+            <RegisterView redirect={route.redirect} />
+          </PageTransition>
+        ) : route.view === "admin" ? (
+          user?.role === "ADMIN" ? (
+            <PageTransition routeKey={`admin-${route.tab ?? "overview"}`}>
+              <AdminView tab={route.tab} />
+            </PageTransition>
+          ) : (
+            <PageTransition routeKey="unauthorized">
+              <div className="min-h-[60vh] flex items-center justify-center px-4">
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-bold">غير مصرح</p>
+                  <p className="text-sm text-muted-foreground">
+                    هذه الصفحة مخصصة لمديري المنصة فقط.
+                  </p>
+                </div>
+              </div>
+            </PageTransition>
           )
         ) : (
-          <HomeView />
+          <PageTransition routeKey="fallback">
+            <HomeView />
+          </PageTransition>
         )}
+        </AnimatePresence>
       </main>
       <Footer />
     </div>

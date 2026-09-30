@@ -48,6 +48,9 @@ export async function POST(req: Request) {
     const completed = existing?.completed || explicitComplete || percent >= 90; // قاعدة الاكتمال 90%
     if (completed) percent = Math.max(percent, 100);
 
+    // تسجيل لحظة الإكمال أول مرة في سجل الأنشطة (لتغذية إحصاءات النشاط الأسبوعي)
+    const firstCompletion = completed && !existing?.completed;
+
     const saved = await db.progress.upsert({
       where: { userId_lessonId: { userId: user.id, lessonId: lesson.id } },
       create: {
@@ -63,6 +66,22 @@ export async function POST(req: Request) {
         completed: { set: completed },
       },
     });
+
+    if (firstCompletion) {
+      await db.activityLog
+        .create({
+          data: {
+            actorId: user.id,
+            actorName: user.name,
+            action: "LESSON_COMPLETE",
+            entity: "lesson",
+            entityId: lesson.id,
+            detail: `أكمل الدرس: ${lesson.id}`,
+            level: "INFO",
+          },
+        })
+        .catch(() => undefined);
+    }
 
     // تأكيد التسجيل في الكورس عند بدء المشاهدة
     await db.courseEnrollment.upsert({

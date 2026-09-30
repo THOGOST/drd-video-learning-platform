@@ -17,6 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AnimatedCounter,
+  FadeIn,
+  FloatingBlobs,
+  HoverLift,
+  Stagger,
+  StaggerItem,
+} from "@/components/motion/animated";
 import { api, useAuth, type CourseListItem } from "@/lib/client";
 import { buildPath, navigate } from "@/lib/router";
 
@@ -55,56 +63,69 @@ export function HomeView() {
   return (
     <div>
       {/* البطل Hero */}
-      <section className="hero-gradient border-b">
-        <div className="mx-auto max-w-7xl px-4 py-16 md:py-24 text-center space-y-6">
-          <Badge variant="outline" className="mx-auto gap-1.5 px-3 py-1 text-primary border-primary/40">
-            <Sparkles className="size-3.5" />
-            منصة تعليمية بالفيديو مع تتبع تلقائي للتقدم
-          </Badge>
-          <h1 className="text-3xl md:text-5xl font-extrabold leading-[1.25] max-w-3xl mx-auto">
-            تعلّم بالفيديو،
-            <span className="text-primary"> وأكمل من حيث توقفت</span> في أي وقت
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed md:text-lg">
-            استعرض الكورسات، شاهد دروسك المرتبة، واحفظ تقدمك تلقائيًا أثناء المشاهدة —
-            بدون أي تدخل يدوي. كل ما تحتاجه لتتبع رحلتك التعليمية في مكان واحد.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <Button size="lg" className="gap-2" onClick={() => navigate(buildPath.courses())}>
-              <ListVideo className="size-5" />
-              استعرض الكورسات
-            </Button>
-            {!user && (
-              <Button size="lg" variant="outline" className="gap-2" onClick={() => navigate(buildPath.register())}>
-                <GraduationCap className="size-5" />
-                أنشئ حسابك مجانًا
+      <section className="hero-gradient border-b relative overflow-hidden">
+        <FloatingBlobs />
+        <div className="mx-auto max-w-7xl px-4 py-16 md:py-24 text-center space-y-6 relative">
+          <FadeIn>
+            <Badge variant="outline" className="mx-auto gap-1.5 px-3 py-1 text-primary border-primary/40">
+              <Sparkles className="size-3.5" />
+              منصة تعليمية بالفيديو مع تتبع تلقائي للتقدم
+            </Badge>
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            <h1 className="text-3xl md:text-5xl font-extrabold leading-[1.25] max-w-3xl mx-auto">
+              تعلّم بالفيديو،
+              <span className="text-primary"> وأكمل من حيث توقفت</span> في أي وقت
+            </h1>
+          </FadeIn>
+          <FadeIn delay={0.2}>
+            <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed md:text-lg">
+              استعرض الكورسات، شاهد دروسك المرتبة، واحفظ تقدمك تلقائيًا أثناء المشاهدة —
+              بدون أي تدخل يدوي. كل ما تحتاجه لتتبع رحلتك التعليمية في مكان واحد.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.3}>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <Button size="lg" className="gap-2" onClick={() => navigate(buildPath.courses())}>
+                <ListVideo className="size-5" />
+                استعرض الكورسات
               </Button>
-            )}
-            {user && (
-              <Button size="lg" variant="outline" className="gap-2" onClick={() => navigate(buildPath.dashboard())}>
-                <Gauge className="size-5" />
-                متابعة تعلمي
-              </Button>
-            )}
-          </div>
+              {!user && (
+                <Button size="lg" variant="outline" className="gap-2" onClick={() => navigate(buildPath.register())}>
+                  <GraduationCap className="size-5" />
+                  أنشئ حسابك مجانًا
+                </Button>
+              )}
+              {user && (
+                <Button size="lg" variant="outline" className="gap-2" onClick={() => navigate(buildPath.dashboard())}>
+                  <Gauge className="size-5" />
+                  متابعة تعلمي
+                </Button>
+              )}
+            </div>
+          </FadeIn>
         </div>
       </section>
 
       {/* المميزات */}
       <section className="mx-auto max-w-7xl px-4 py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
-            <Card key={f.title} className="border-border/60">
-              <CardContent className="p-5 space-y-2.5">
-                <span className="flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary">
-                  <f.icon className="size-5" />
-                </span>
-                <h3 className="font-bold">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.text}</p>
-              </CardContent>
-            </Card>
+            <StaggerItem key={f.title}>
+              <HoverLift className="h-full">
+                <Card className="border-border/60 h-full">
+                  <CardContent className="p-5 space-y-2.5">
+                    <span className="flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary">
+                      <f.icon className="size-5" />
+                    </span>
+                    <h3 className="font-bold">{f.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{f.text}</p>
+                  </CardContent>
+                </Card>
+              </HoverLift>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
 
       {/* الكورسات */}
@@ -152,26 +173,30 @@ export function HomeView() {
       {/* شريط ثقة */}
       <section className="border-t bg-card/40">
         <div className="mx-auto max-w-7xl px-4 py-8 grid grid-cols-3 gap-4 text-center">
-          <div className="space-y-1">
-            <p className="text-2xl font-extrabold text-primary">{courses.length}</p>
+          <FadeIn className="space-y-1">
+            <p className="text-2xl font-extrabold text-primary">
+              <AnimatedCounter value={courses.length} />
+            </p>
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <ListVideo className="size-3.5" /> كورس منشور
             </p>
-          </div>
-          <div className="space-y-1">
+          </FadeIn>
+          <FadeIn delay={0.1} className="space-y-1">
             <p className="text-2xl font-extrabold text-primary">
-              {courses.reduce((s, c) => s + c.lessonsCount, 0)}
+              <AnimatedCounter value={courses.reduce((s, c) => s + c.lessonsCount, 0)} />
             </p>
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <Clock3 className="size-3.5" /> درس بالفيديو
             </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-extrabold text-primary">100%</p>
+          </FadeIn>
+          <FadeIn delay={0.2} className="space-y-1">
+            <p className="text-2xl font-extrabold text-primary">
+              <AnimatedCounter value={100} suffix="%" />
+            </p>
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <ShieldCheck className="size-3.5" /> حفظ تلقائي للتقدم
             </p>
-          </div>
+          </FadeIn>
         </div>
       </section>
     </div>

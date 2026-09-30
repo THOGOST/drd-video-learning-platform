@@ -76,6 +76,32 @@ export async function GET() {
     const totalCompleted = courses.reduce((s, c) => s + c.completedCount, 0);
     const watchedSeconds = progressRows.reduce((s, p) => s + p.lastPosition, 0);
 
+    // ─── النشاط الأسبوعي (آخر 7 أيام): دروس مكتملة + دقائق مشاهدة ───
+    const now = new Date();
+    const dayLabels = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+    const buckets = new Map<string, { label: string; completed: number; minutes: number }>();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      buckets.set(key, { label: dayLabels[d.getDay()], completed: 0, minutes: 0 });
+    }
+
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    const completions = await db.activityLog.findMany({
+      where: { actorId: user.id, action: "LESSON_COMPLETE", createdAt: { gte: weekStart } },
+      select: { createdAt: true },
+    });
+    for (const c of completions) {
+      const key = `${c.createdAt.getFullYear()}-${String(c.createdAt.getMonth() + 1).padStart(2, "0")}-${String(c.createdAt.getDate()).padStart(2, "0")}`;
+      const bucket = buckets.get(key);
+      if (bucket) bucket.completed += 1;
+    }
+    for (const p of progressRows) {
+      const key = `${p.updatedAt.getFullYear()}-${String(p.updatedAt.getMonth() + 1).padStart(2, "0")}-${String(p.updatedAt.getDate()).padStart(2, "0")}`;
+      const bucket = buckets.get(key);
+      if (bucket) bucket.minutes += Math.round(p.lastPosition / 60);
+    }
+
     return ok({
       stats: {
         coursesCount: courses.length,
@@ -86,6 +112,12 @@ export async function GET() {
         watchedMinutes: Math.round(watchedSeconds / 60),
         lastActivityAt: lastActivityAt ? lastActivityAt.toISOString() : null,
       },
+      weeklyActivity: Array.from(buckets.entries()).map(([key, v]) => ({
+        day: key,
+        label: v.label,
+        completed: v.completed,
+        minutes: v.minutes,
+      })),
       courses,
     });
   } catch (e) {
