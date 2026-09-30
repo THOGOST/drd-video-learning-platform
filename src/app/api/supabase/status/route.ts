@@ -23,10 +23,13 @@ export async function GET() {
     if (configured) {
       try {
         projectHost = new URL(url).host;
-        const res = await fetch(`${url}/rest/v1/?apikey=${anonKey || serviceKey}`, {
+        // نقطة النهاية الجذرية /rest/v1/ تقبل service_role فقط حديثًا في Supabase،
+        // لذلك نفضّل service_key ثم anon كخيار احتياطي
+        const checkKey = serviceKey || anonKey;
+        const res = await fetch(`${url}/rest/v1/?apikey=${checkKey}`, {
           headers: {
-            apikey: anonKey || serviceKey,
-            Authorization: `Bearer ${anonKey || serviceKey}`,
+            apikey: checkKey,
+            Authorization: `Bearer ${checkKey}`,
           },
           signal: AbortSignal.timeout(6000),
         });
