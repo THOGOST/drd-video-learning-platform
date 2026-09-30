@@ -26,3 +26,30 @@ Stage Summary:
 - حسابات: admin@drd.edu / Admin@123 — student@drd.edu / Student@123
 - ملفات أساسية: prisma/schema.prisma, prisma/seed.ts, src/lib/{auth,api-helpers,router,client,workflow}.ts, src/app/api/**, src/components/{video-player,app-shell,navbar,course-card,lesson-list}.tsx, src/components/views/**
 - ملاحظة نشر: الفيديوهات التجريبية محلية؛ للانتقال إلى Google Drive: admin → الدروس → مصدر الفيديو → Google Drive + File ID، وتغيير provider في schema.prisma إلى postgresql
+
+---
+Task ID: 2
+Agent: Main Agent (Super Z)
+Task: طلبات الجلسة الثانية: أنميشن شامل + تطوير لوحة الطالب + صفحة أدمن مخصصة + تجهيز Supabase + رفع المشروع على ريبو GitHub جديد
+
+Work Log:
+- تثبيت canvas-confetti + @supabase/supabase-js (framer-motion كان موجودًا)
+- إنشاء مكتبة أنميشن موحدة src/components/motion/animated.tsx: FadeIn / Stagger / StaggerItem / PageTransition / AnimatedCounter / ProgressRing / HoverLift / FloatingBlobs
+- تطبيق PageTransition+AnimatePresence على كل صفحات app-shell + أنميشن الهيرو والمميزات وعدادات شريط الثقة في home-view
+- توسيع /api/dashboard: weeklyActivity (آخر 7 أيام: دقائق مشاهدة + دروس مكتملة) مع تسجيل LESSON_COMPLETE في ActivityLog من /api/progress
+- إعادة بناء dashboard-view: بطاقة ترحيب بحلقة تقدم SVG متحركة + 4 بطاقات إحصاء بعدادات متصاعدة + رسم أعمدة أسبوعي (recharts) + شبكة 6 شارات إنجاز + كورساتي متحركة + شارة إكمال الكورس
+- إعادة بناء admin-view: تخطيط جانبي (Sidebar) بديسكتوب + تبويبات أفقية للموبايل + مؤشر متحرك layoutId + شارة ADMIN + قسم جديد "قاعدة البيانات" + إعادة تسمية "رفع الكورسات" و"المستخدمون والصلاحيات"
+- admin-users محسّن: 3 بطاقات ملخص + بحث + تصفية بالدور/التعطيل + مرجع صلاحيات (مدير/طالب)
+- جديد admin-supabase: حالة الاتصال الحية + متغيرات البيئة المطلوبة + بطاقات ملفات SQL + خطوات الربط + زر فتح لوحة Supabase
+- جديد /api/supabase/status: فحص env + اختبار اتصال REST فعلي + إخفاء القيم الحساسة (masking)
+- جديد src/lib/supabase.ts: عميل supabase-js ديناميكي يعيد null عند غياب الإعداد
+- supabase/schema.sql: 8 جداول PostgreSQL + فهارس + قواعد فريدة + trigger set_updated_at + ملاحظات RLS
+- supabase/seed.sql: 3 مستخدمين (هاشات scrypt حقيقية متوافقة مع auth.ts) + 4 كورسات + 14 درسًا + 12 رابطًا + تقدم + سجل نشاط
+- supabase/README.md: دليل ربط من 6 خطوات + .env.example
+- إصلاح: module-not-found لملف admin-supabase.tsx (touch لإجبار إعادة الترجمة) — التحقق بالمتصفح: الرئيسية + دخول طالب → لوحة (حلقة 22% + إنجازات 2/6 + كورساتي) + أدمن (نظرة عامة/supabase/users/courses) كلها تعمل بدون أخطاء كونسول
+- GitHub: إزالة .env وdb/custom.db وscreenshots من التتبع + README.md شامل + إنشاء ريبو THOGOST/drd-video-learning-platform + push main + إزالة التوكن من remote URL
+
+Stage Summary:
+- ريبو جديد: https://github.com/THOGOST/drd-video-learning-platform (public)
+- كل المتطلبات أنجزت: أنميشن، لوحة طالب مطورة، صفحة أدمن كاملة (رفع كورسات + صلاحيات + مستخدمين)، Supabase جاهز (SQL + عميل + دليل + فحص حالة من اللوحة)
+- التوكن المستخدم: ghp_...b1Vy (مخزن فقط في التاريخ المحلي للأوامر، غير موجود في ملفات المشروع أو الريبو)
