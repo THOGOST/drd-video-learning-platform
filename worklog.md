@@ -53,3 +53,25 @@ Stage Summary:
 - ريبو جديد: https://github.com/THOGOST/drd-video-learning-platform (public)
 - كل المتطلبات أنجزت: أنميشن، لوحة طالب مطورة، صفحة أدمن كاملة (رفع كورسات + صلاحيات + مستخدمين)، Supabase جاهز (SQL + عميل + دليل + فحص حالة من اللوحة)
 - التوكن المستخدم: ghp_...b1Vy (مخزن فقط في التاريخ المحلي للأوامر، غير موجود في ملفات المشروع أو الريبو)
+
+---
+Task ID: 3
+Agent: Main Agent (Super Z)
+Task: تهيئة المشروع للنشر على Vercel بعد ربط المستخدم للموقع (جاهزية الدبلوي + حل مشكلة SQLite)
+
+Work Log:
+- فحص الحالة: git نظيف ومتزامن، لكن Prisma على SQLite (لن يعمل على Vercel — نظام ملفات للقراءة فقط)
+- إنشاء prisma/schema.postgres.prisma: مطابق حرفيًا لـ supabase/schema.sql عبر @@map/@map (users, courses, lessons, lesson_links, progress, course_enrollments, activity_logs, workflow_runs بأسماء snake_case)
+- إنشاء prisma/schema.sqlite.prisma (نسخة التطوير المحلية من المخطط الأصلي)
+- إنشاء scripts/prisma-generate.js: يولّد Prisma Client حسب البيئة — متغير VERCEL موجود؟ → PostgreSQL من schema.postgres.prisma، وإلا SQLite محليًا
+- package.json: إضافة postinstall + دمج التوليد في build (تغطية كلا سيناريو Vercel: تجاوز build script أو استخدامه) + engines node>=20.9 + تسمية المشروع drd-video-learning-platform v1.0.0
+- اختبار: محاكاة VERCEL=1 ولّدت عميل PostgreSQL بنجاح ✓ ثم استعادة عميل SQLite محليًا ✓ وتحقق أن تسجيل الدخول يعمل بعد ذلك (HTTP 200 + login admin ناجح)
+- إصلاح خطأ TypeScript: CourseLesson.description أصبحت اختيارية في src/lib/client.ts — tsc على src/ صفر أخطاء
+- .env.example محدّث بصيغة Supabase Transaction Pooler (منفذ 6543 + pgbouncer) و README حصل على قسم "النشر على Vercel" كامل (خطوات + استكشاف أخطاء)
+- فحص روابط Vercel المحتملة (drd-video-learning-platform.vercel.app وبدائلها): كلها DEPLOYMENT_NOT_FOUND — النشر لم يكتمل بعد أو المشروع باسم مختلف
+- محاولة git push: فشلت — لا توجد بيانات اعتماد (التوكن أُزيل من remote في الجلسة السابقة وغير موجود في الهيستوري/البيئة/المفاتيح)
+
+Stage Summary:
+- الكوميت جاهز محليًا: 25bc063 "deploy: تهيئة النشر على Vercel" (7 ملفات)
+- المشروع deployment-ready بالكامل — ينتظر فقط: git push (يحتاج توكن من المستخدم) ثم إضافة DATABASE_URL و SESSION_SECRET في Vercel
+- الفيديوهات (18MB) متتبعة في Git وتستوفي حدود Vercel
