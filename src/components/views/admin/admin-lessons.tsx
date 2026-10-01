@@ -51,6 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api, formatDuration } from "@/lib/client";
+import { normalizeVideoInput } from "@/lib/drive";
 
 type AdminCourseLite = { id: string; title: string; status: string };
 type AdminLesson = {
@@ -329,7 +330,26 @@ export function AdminLessons() {
             className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
-              saveMutation.mutate({ ...form, id: editing?.id });
+              // تطبيع فوري: استخراج File ID من الروابط + رفض لينكات المجلدات
+              const video = normalizeVideoInput(form);
+              if (video.error) {
+                toast({
+                  title: "مشكلة في مصدر الفيديو",
+                  description: video.error,
+                  variant: "destructive",
+                });
+                return;
+              }
+              if (video.notice) {
+                toast({ title: "تم التصحيح تلقائيًا", description: video.notice });
+              }
+              saveMutation.mutate({
+                ...form,
+                videoSource: video.videoSource,
+                videoUrl: video.videoUrl ?? "",
+                driveFileId: video.driveFileId ?? "",
+                id: editing?.id,
+              });
             }}
           >
             <div className="space-y-2">
@@ -402,19 +422,20 @@ export function AdminLessons() {
                     onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    رابط MP4 مباشر — يدعم حفظ نقطة التوقف داخل المشغل بدقة.
+                    رابط MP4 مباشر — يدعم حفظ نقطة التوقف داخل المشغل بدقة. لو لصقت لينك Google
+                    Drive ملف هيتحوّل تلقائيًا لوضع Drive.
                   </p>
                 </TabsContent>
                 <TabsContent value="drive" className="space-y-2">
                   <Input
                     dir="ltr"
-                    placeholder="Google Drive File ID"
+                    placeholder="Google Drive File ID أو لينك الملف كامل"
                     value={form.driveFileId}
                     onChange={(e) => setForm({ ...form, driveFileId: e.target.value })}
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    ضع File ID فقط (من الرابط: drive.google.com/file/d/<b>FILE_ID</b>/view)
-                    وتأكد أن صلاحية الملف «أي شخص لديه الرابط».
+                    صق لينك الملف كامل (drive.google.com/file/d/<b>FILE_ID</b>/view) أو المعرّف فقط
+                    — الاتنين بيشتغلوا. لازم صلاحية الملف تكون «أي شخص لديه الرابط».
                   </p>
                 </TabsContent>
               </Tabs>

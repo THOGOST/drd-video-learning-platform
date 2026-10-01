@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { adminGuard, clean, ERR, fail, logActivity, ok, toInt } from "@/lib/api-helpers";
+import { normalizeVideoInput } from "@/lib/drive";
 
 // GET /api/admin/lessons?courseId= — دروس كورس معين
 export async function GET(req: Request) {
@@ -55,7 +56,13 @@ export async function POST(req: Request) {
       select: { orderIndex: true },
     });
 
-    const videoSource = body.videoSource === "drive" ? "drive" : "direct";
+    // تطبيع مصدر الفيديو: استخراج File ID تلقائيًا + رفض لينكات المجلدات
+    const video = normalizeVideoInput({
+      videoSource: body.videoSource,
+      videoUrl: body.videoUrl,
+      driveFileId: body.driveFileId,
+    });
+    if (video.error) return fail(video.error, 422);
 
     const lesson = await db.lesson.create({
       data: {
@@ -64,9 +71,9 @@ export async function POST(req: Request) {
         description: clean(body.description, 3000) || null,
         orderIndex: body.orderIndex !== undefined ? toInt(body.orderIndex) : (last?.orderIndex ?? -1) + 1,
         duration: Math.max(0, toInt(body.duration, 0)),
-        driveFileId: videoSource === "drive" ? clean(body.driveFileId, 120) || null : null,
-        videoUrl: videoSource === "direct" ? clean(body.videoUrl, 600) || null : null,
-        videoSource,
+        driveFileId: video.driveFileId,
+        videoUrl: video.videoUrl,
+        videoSource: video.videoSource,
         status: body.status === "DRAFT" ? "DRAFT" : "PUBLISHED",
       },
     });
@@ -111,19 +118,17 @@ export async function PATCH(req: Request) {
     if (body.orderIndex !== undefined) data.orderIndex = toInt(body.orderIndex);
     if (body.status !== undefined && ["DRAFT", "PUBLISHED"].includes(body.status))
       data.status = body.status;
-    if (body.videoSource !== undefined && ["direct", "drive"].includes(body.videoSource)) {
-      data.videoSource = body.videoSource;
-      if (body.videoSource === "drive") {
-        data.driveFileId = clean(body.driveFileId ?? existing.driveFileId, 120) || null;
-        data.videoUrl = null;
-      } else {
-        data.videoUrl = clean(body.videoUrl ?? existing.videoUrl, 600) || null;
-        data.driveFileId = null;
-      }
-    } else {
-      if (body.driveFileId !== undefined)
-        data.driveFileId = clean(body.driveFileId, 120) || null;
-      if (body.videoUrl !== undefined) data.videoUrl = clean(body.videoUrl, 600) || null;
+    if (body.videoSource !== undefined || body.driveFileId !== undefined || body.videoUrl !== undefined) {
+      // تطبيع موحّد: استخراج File ID تلقائيًا + رفض لينكات المجلدات
+      const video = normalizeVideoInput({
+        videoSource: body.videoSource ?? existing.videoSource,
+        videoUrl: body.videoUrl !== undefined ? body.videoUrl : existing.videoUrl,
+        driveFileId: body.driveFileId !== undefined ? body.driveFileId : existing.driveFileId,
+      });
+      if (video.error) return fail(video.error, 422);
+      data.videoSource = video.videoSource;
+      data.videoUrl = video.videoUrl;
+      data.driveFileId = video.driveFileId;
     }
 
     const lesson = await db.lesson.update({ where: { id: existing.id }, data });
