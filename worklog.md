@@ -128,3 +128,23 @@ Stage Summary:
 - المشكلة الأصلية "مش عايز يعمل حساب جديد" — انحلّت على drd-video-learning-platform.vercel.app ✅ (تسجيل + دخول + كورسات كلها شغالة على قاعدة Supabase الحقيقية)
 - teamcours.vercel.app يظل 503 حتى يضيف المستخدم DATABASE_URL + SESSION_SECRET له أيضًا أو يحذفه (مشروع مكرر ل نفس الريبو)
 - توصية أمنية متبقية: تدوير التوكن وكلمة مرور DB بعد انتهاء الإعداد
+
+---
+Task ID: 7
+Agent: Main Agent (Super Z)
+Task: إصلاح مشكلة عدم تشغيل الفيديو (Google Drive) + تحصين النظام ضد الخطأ نفسه
+
+Work Log:
+- تشخيص: الدرس "test 1" في كورس Test 1 مخزّن videoSource=direct مع لينك مجلد Drive (folders/10w_TD…) — نموذج HTML5 لا يستطيع تشغيل صفحة Drive
+- اختبار ملف المستخدم الحقيقي (file/d/14wxAZOL…) — تنزيل ناجح video/mp4 ح 8.8MB → الملف عام وسليم
+- إصلاح فوري للبيانات عبر PATCH /api/admin/lessons: videoSource=drive + driveFileId الصحيح
+- جديد src/lib/drive.ts: extractDriveFileId (صيغ file/d + open?id= + uc?id= + ID خام) + isDriveFolderLink + normalizeVideoInput (تحويل تلقائي من direct إلى drive عند لصق رابط Drive ملف + رفض لينكات المجلدات برسالة عربية)
+- تحديث POST/PATCH في /api/admin/lessons لاستخدام التطبيع الموحد (حماية سيرفر)
+- تحديث admin-lessons.tsx: تطبيع فوري عند الإرسال + توست خطأ/تصحيح تلقائي + نصوص مساعدة أوضح
+- رفع إلى GitHub (كوميت 3d80006) ونشر تلقائي على Vercel
+- تحقق إنتاج: لينك مجلد → 422 برسالة عربية ✓ | لينك ملف كامل → تحول تلقائي drive+FileID ✓ | الدرس الأصلي drive+FileID سليم ✓
+
+Stage Summary:
+- فيديو المستخدم يعمل الآن في كورس Test 1 (iframe /preview)
+- الخطأ نفسه لن يتكرر: السيرفر والواجهة يصححان تلقائيًا أو يرفضان برسالة توضيحية
+- ملاحظة: كوميتات تلقائية بأسماء UUID كانت في انتظار الدفع (worklog + dbtest + uploads) — دُفعت جميعها؛ لا أسرار فيها
