@@ -148,3 +148,24 @@ Stage Summary:
 - فيديو المستخدم يعمل الآن في كورس Test 1 (iframe /preview)
 - الخطأ نفسه لن يتكرر: السيرفر والواجهة يصححان تلقائيًا أو يرفضان برسالة توضيحية
 - ملاحظة: كوميتات تلقائية بأسماء UUID كانت في انتظار الدفع (worklog + dbtest + uploads) — دُفعت جميعها؛ لا أسرار فيها
+
+---
+Task ID: 8
+Agent: Main Agent (Super Z)
+Task: حزمة تطوير الموقع (2+3+11+12+13+14): اختبارات + شهادات + استيراد Drive + أنميشن
+
+Work Log:
+- DB: إضافة QuizQuestion + QuizPass للمخططين (postgres/sqlite) + supabase/schema.sql + ترقية إنتاج Supabase فعليًا (scripts/dbtest/migrate-quiz.mjs) + db push محلي
+- جديد src/lib/quiz-lock.ts: قاعدة القفل (الدرس التالي لدرس فيه اختبار غير مجتاز) — المدير مستثنى
+- APIs: lessons/[id]/quiz (GET بدون إجابات + POST تصحيح ومنح اجتياز) | admin/quiz CRUD | admin/lessons/import-drive (embeddedfolderview parsing بدون API key + فلترة فيديو + منع تكرار) | certificate/[slug] (تحقق 100% + كود sha256 ثابت)
+- lessons/[id]: quiz meta + فرض القفل 423 مع prevLessonId | courses/[slug]: locked flags | dashboard: continueWatching
+- UI: lesson-quiz.tsx (أسئلة + تصحيح ملون + احتفال) | قفل في lesson-view + lesson-list | certificate-view.tsx (طباعة PDF عربية + كونفيتي + print CSS) | admin-quiz-dialog.tsx + حوار استيراد | شريط أكمل المشاهدة في home | CourseGridSkeleton مشترك | zoom-morph لرأس الكورس
+- client.ts: ApiError يحمل data إضافية + CourseLesson.locked
+- محليًا: seed جديد (cuids جديدة) — اختبار كامل: سؤالان → غلط 1/2 → صح 2/2 → 423 قبل → 200 بعد → locked flags صحيحة → شهادة 403 → استيراد المجلد الحقيقي للمستخدم أنشأ درسًا فعليًا ✓
+- رفع 35eac45 → نشر Vercel → تحقق إنتاج: quiz 200، رفض استيراد غير المجلد، شهادة admin أصدرت كود 22733B092FA43186
+- ملاحظة: إعادة تشغيل dev server كانت لازمة لتحميل Prisma Client الجديد
+
+Stage Summary:
+- 6 ميزات جديدة كلها موثقة ومختبرة محليًا وعلى الإنتاج
+- سؤال تجريبي مضاف لدرس Test 1 ("هل الفيديو ده شغال معاك؟") ليستعرضه المستخدم
+- شهادة إتمام متاحة فعليًا للمدير على كورس Test 1
