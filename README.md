@@ -77,6 +77,9 @@ bun run dev            # http://localhost:3000
    | `SESSION_SECRET` | سلسلة عشوائية طويلة (`openssl rand -base64 32`) |
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://PROJECT_REF.supabase.co` (اختياري) |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | مفتاح anon (اختياري) |
+   | `NEXT_PUBLIC_GOOGLE_API_KEY` | مفتاح Google Drive API (اختياري — موصى به: يتيح وضع «جودة أصلية» لتشغيل دروس Drive بجودتها الكاملة حتى في ملء الشاشة) |
+
+   > للحصول على المفتاح: [Google Cloud Console](https://console.cloud.google.com) → أنشئ مشروعًا → **APIs & Services → Library** → فعّل **Google Drive API** → **Credentials → Create Credentials → API Key** → قيّده (API restrictions: Google Drive API + Website restrictions: نطاق موقعك). الملفات يجب أن تكون مشاركة بـ«أي شخص لديه الرابط».
 
 4. **Vercel**: Redeploy — البناء يولّد Prisma Client لـ PostgreSQL تلقائيًا
 5. **تحقق**: افتح الموقع ← سجل الدخول بالحسابات التجريبية ← لوحة الإدارة → قاعدة البيانات
