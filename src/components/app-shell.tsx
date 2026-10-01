@@ -12,6 +12,7 @@ import { HomeView } from "@/components/views/home-view";
 import { CoursesView } from "@/components/views/courses-view";
 import { CourseDetailsView } from "@/components/views/course-details-view";
 import { LessonView } from "@/components/views/lesson-view";
+import { CertificateView } from "@/components/views/certificate-view";
 import { DashboardView } from "@/components/views/dashboard-view";
 import { LoginView } from "@/components/views/login-view";
 import { RegisterView } from "@/components/views/register-view";
@@ -62,6 +63,7 @@ export function AppShell() {
     const needsAuth =
       (route.view === "dashboard") ||
       (route.view === "lesson") ||
+      (route.view === "certificate") ||
       (route.view === "admin");
     if (needsAuth && !user) {
       const redirect =
@@ -74,8 +76,10 @@ export function AppShell() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
+      <div className="min-h-screen flex flex-col print:bg-white">
+        <div className="print:hidden">
+          <Navbar />
+        </div>
       <main className="flex-1">
         <AnimatePresence mode="wait">
         {loading ? (
@@ -102,6 +106,10 @@ export function AppShell() {
         ) : route.view === "lesson" ? (
           <PageTransition routeKey={`lesson-${route.slug}-${route.lessonId}`}>
             <LessonView slug={route.slug} lessonId={route.lessonId} />
+          </PageTransition>
+        ) : route.view === "certificate" ? (
+          <PageTransition routeKey={`certificate-${route.slug}`}>
+            <CertificateView slug={route.slug} />
           </PageTransition>
         ) : route.view === "dashboard" ? (
           <PageTransition routeKey="dashboard">
@@ -139,7 +147,9 @@ export function AppShell() {
         )}
         </AnimatePresence>
       </main>
-      <Footer />
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
     </QueryClientProvider>
   );

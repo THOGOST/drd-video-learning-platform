@@ -69,6 +69,16 @@ export function extractDriveFileId(input: string): string | null {
   return null;
 }
 
+/** استخراج Folder ID من لينك مجلد: drive.google.com/drive/folders/FOLDER_ID */
+export function extractDriveFolderId(input: string): string | null {
+  const s = (input || "").trim();
+  if (!s) return null;
+  const m = s.match(
+    /drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([a-zA-Z0-9_-]{10,60})/i
+  );
+  return m ? m[1] : null;
+}
+
 /**
  * تطبيع موحّد لمدخلات مصدر الفيديو قبل الحفظ:
  * - وضع drive: يقبل File ID خام أو أي رابط ملف Drive ويستخرج المعرّف تلقائيًا.

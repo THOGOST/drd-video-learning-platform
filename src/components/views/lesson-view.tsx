@@ -12,18 +12,23 @@ import {
   ExternalLink,
   FileText,
   FolderGit2,
+  HelpCircle,
   Link2,
   ListVideo,
   Loader2,
+  Lock,
+  Trophy,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoPlayer, type PlayerProgress } from "@/components/video-player";
+import { LessonQuiz } from "@/components/lesson-quiz";
 import { LessonList } from "@/components/lesson-list";
-import { api, formatDuration, useAuth } from "@/lib/client";
+import { api, formatDuration, useAuth, ApiError } from "@/lib/client";
 import { buildPath, navigate } from "@/lib/router";
 
 type LessonResponse = {
@@ -41,6 +46,7 @@ type LessonResponse = {
   links: { id: string; title: string; url: string; type: string }[];
   prev: { id: string; title: string } | null;
   next: { id: string; title: string } | null;
+  quiz: { enabled: boolean; passed: boolean };
   progress: PlayerProgress | null;
 };
 
@@ -55,10 +61,11 @@ export function LessonView({ slug, lessonId }: { slug: string; lessonId: string 
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["lesson", lessonId],
     queryFn: () => api<LessonResponse>(`/api/lessons/${lessonId}`),
     enabled: Boolean(user), // الحماية على السيرفر أيضًا (FR-13)
+    retry: (count, err) => !(err instanceof ApiError && err.status === 423) && count < 1,
   });
 
   const handleProgressChange = (p: PlayerProgress) => {
@@ -85,6 +92,38 @@ export function LessonView({ slug, lessonId }: { slug: string; lessonId: string 
   }
 
   if (isError || !data) {
+    // درس مقفول: الدرس السابق فيه اختبار لم يُجتز (423 من السيرفر)
+    if (error instanceof ApiError && error.status === 423) {
+      return (
+        <div className="mx-auto max-w-5xl px-4 py-20 text-center space-y-4">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-amber-500/15 text-amber-600">
+            <Lock className="size-8" />
+          </div>
+          <p className="text-lg font-bold">الدرس مقفول 🔒</p>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {error.message}
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={() => navigate(buildPath.course(slug))}>
+              قائمة الدروس
+            </Button>
+            <Button
+              onClick={() => {
+                const prevId =
+                  typeof error.data?.prevLessonId === "string"
+                    ? error.data.prevLessonId
+                    : undefined;
+                navigate(prevId ? buildPath.lesson(slug, prevId) : buildPath.course(slug));
+              }}
+              className="gap-1.5"
+            >
+              <HelpCircle className="size-4" />
+              اذهب للاختبار
+            </Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="mx-auto max-w-5xl px-4 py-20 text-center space-y-3">
         <p className="text-lg font-bold">الدرس غير موجود أو غير منشور</p>
@@ -143,6 +182,27 @@ export function LessonView({ slug, lessonId }: { slug: string; lessonId: string 
                 <Badge variant="secondary" className="gap-1">
                   <Loader2 className="size-3 hidden" />
                   {formatDuration(lesson.duration)}
+                </Badge>
+              )}
+              {data.quiz.enabled && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "gap-1",
+                    data.quiz.passed
+                      ? "text-green-600 border-green-600/40"
+                      : "text-amber-600 border-amber-600/40"
+                  )}
+                >
+                  {data.quiz.passed ? (
+                    <>
+                      <Trophy className="size-3" /> الاختبار: مجتاز
+                    </>
+                  ) : (
+                    <>
+                      <HelpCircle className="size-3" /> يوجد اختبار
+                    </>
+                  )}
                 </Badge>
               )}
               {progress?.completed && (
@@ -226,6 +286,16 @@ export function LessonView({ slug, lessonId }: { slug: string; lessonId: string 
               </TabsContent>
             </Tabs>
           </div>
+
+          {/* اختبار الدرس — يفتح الدرس التالي عند الاجتياز */}
+          {data.quiz.enabled && (
+            <LessonQuiz
+              lessonId={lesson.id}
+              onPassed={() => {
+                void queryClient.invalidateQueries({ queryKey: ["course", slug] });
+              }}
+            />
+          )}
 
           {/* السابق / التالي */}
           <div className="grid grid-cols-2 gap-3 pt-2">

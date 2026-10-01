@@ -76,6 +76,33 @@ export async function GET() {
     const totalCompleted = courses.reduce((s, c) => s + c.completedCount, 0);
     const watchedSeconds = progressRows.reduce((s, p) => s + p.lastPosition, 0);
 
+    // ─── «أكمل من حيث توقفت»: آخر درس غير مكتمل شوهدته (مفروز بحدث updated_at) ───
+    const lessonInfo = new Map<string, { title: string; course: (typeof courses)[number] }>();
+    for (const e of enrollments) {
+      const courseOut = courses.find((c) => c.id === e.course.id)!;
+      for (const l of e.course.lessons) lessonInfo.set(l.id, { title: l.title, course: courseOut });
+    }
+    const activeRow = progressRows.find(
+      (p) => !p.completed && lessonInfo.has(p.lessonId) && p.progressPercent > 0
+    );
+    let continueWatching: {
+      lessonId: string;
+      lessonTitle: string;
+      courseTitle: string;
+      courseSlug: string;
+      percent: number;
+    } | null = null;
+    if (activeRow) {
+      const info = lessonInfo.get(activeRow.lessonId)!;
+      continueWatching = {
+        lessonId: activeRow.lessonId,
+        lessonTitle: info.title,
+        courseTitle: info.course.title,
+        courseSlug: info.course.slug,
+        percent: activeRow.progressPercent,
+      };
+    }
+
     // ─── النشاط الأسبوعي (آخر 7 أيام): دروس مكتملة + دقائق مشاهدة ───
     const now = new Date();
     const dayLabels = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -112,6 +139,7 @@ export async function GET() {
         watchedMinutes: Math.round(watchedSeconds / 60),
         lastActivityAt: lastActivityAt ? lastActivityAt.toISOString() : null,
       },
+      continueWatching,
       weeklyActivity: Array.from(buckets.entries()).map(([key, v]) => ({
         day: key,
         label: v.label,

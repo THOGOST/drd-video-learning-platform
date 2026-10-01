@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CourseCard } from "@/components/course-card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CourseGridSkeleton } from "@/components/course-grid-skeleton";
 import { api, useAuth, type CourseListItem } from "@/lib/client";
 
 export function CoursesView() {
@@ -28,15 +28,7 @@ export function CoursesView() {
       </header>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="aspect-video rounded-xl" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
-            </div>
-          ))}
-        </div>
+        <CourseGridSkeleton count={4} />
       ) : courses.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground space-y-3">

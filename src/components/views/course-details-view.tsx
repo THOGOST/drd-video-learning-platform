@@ -3,8 +3,10 @@
 // تفاصيل الكورس: غلاف + نسبة الإنجاز + قائمة الدروس بحالتها (FR-03) + زر متابعة
 
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
+  Award,
   BookOpen,
   CheckCircle2,
   Clock3,
@@ -68,8 +70,13 @@ export function CourseDetailsView({ slug }: { slug: string }) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
-      {/* رأس الكورس */}
-      <div className="relative rounded-2xl overflow-hidden border">
+      {/* رأس الكورس — يدخل بحركة تكبير تحاكي تحول كارت الكورس إلى صفحة */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26 }}
+        className="relative rounded-2xl overflow-hidden border"
+      >
         <div className="absolute inset-0">
           {course.thumbnail ? (
             <img
@@ -141,7 +148,17 @@ export function CourseDetailsView({ slug }: { slug: string }) {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* زر الشهادة عند الإتمام */}
+      {user && percent === 100 && lessons.length > 0 && (
+        <div className="flex justify-center">
+          <Button variant="outline" className="gap-2" onClick={() => navigate(buildPath.certificate(course.slug))}>
+            <Award className="size-4" />
+            استلم شهادتك عند إتمام الكورس 🎓
+          </Button>
+        </div>
+      )}
 
       {/* قائمة الدروس */}
       <Card>

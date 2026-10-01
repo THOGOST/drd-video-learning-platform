@@ -25,6 +25,7 @@ model User {
 
   enrollments CourseEnrollment[]
   progress    Progress[]
+  quizPasses  QuizPass[]
 }
 
 // ─── courses: الكورسات ───
@@ -61,6 +62,8 @@ model Lesson {
   course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   links    LessonLink[]
   progress Progress[]
+  quizQuestions QuizQuestion[]
+  quizPasses    QuizPass[]
 
   @@index([courseId, orderIndex])
 }
@@ -129,4 +132,34 @@ model WorkflowRun {
   status    String   @default("SUCCESS") // SUCCESS | WARNING | FAILED
   result    String? // JSON
   createdAt DateTime @default(now())
+}
+
+// ─── quiz_questions: أسئلة اختبار الدرس (اختيار من متعدد) ───
+model QuizQuestion {
+  id           String   @id @default(cuid())
+  lessonId     String
+  question     String
+  options      String // JSON array من نصوص الخيارات
+  correctIndex Int      @default(0)
+  orderIndex   Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+}
+
+// ─── quiz_passes: نجاح المستخدم في اختبار درس ───
+model QuizPass {
+  id       String   @id @default(cuid())
+  userId   String
+  lessonId String
+  score    Int      @default(0)
+  total    Int      @default(0)
+  passedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
 }

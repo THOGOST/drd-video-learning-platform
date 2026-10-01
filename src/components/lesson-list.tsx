@@ -24,6 +24,7 @@ export function LessonList({
     <ol className="space-y-1.5" aria-label="قائمة دروس الكورس">
       {lessons.map((lesson, i) => {
         const active = lesson.id === activeLessonId;
+        const locked = Boolean(lesson.locked);
         const target = `/courses/${courseSlug}/lessons/${lesson.id}`;
 
         return (
@@ -32,16 +33,20 @@ export function LessonList({
               type="button"
               onClick={() => navigate(target)}
               aria-current={active ? "page" : undefined}
+              aria-label={locked ? `الدرس ${i + 1} مقفول — اجتز اختبار الدرس السابق أولًا` : `الدرس ${i + 1}: ${lesson.title}`}
               className={cn(
                 "w-full text-start flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all",
                 "hover:bg-accent hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring",
                 active && "border-primary/60 bg-accent shadow-sm",
-                lesson.status === "COMPLETED" && "bg-primary/[0.04]"
+                lesson.status === "COMPLETED" && "bg-primary/[0.04]",
+                locked && "opacity-70"
               )}
             >
               {/* مؤشر الحالة */}
               <span className="shrink-0">
-                {!isAuthenticated ? (
+                {locked ? (
+                  <Lock className="size-4 text-amber-600" />
+                ) : !isAuthenticated ? (
                   <Lock className="size-4 text-muted-foreground" />
                 ) : lesson.status === "COMPLETED" ? (
                   <CheckCircle2 className="size-5 text-primary" />
@@ -70,7 +75,7 @@ export function LessonList({
               </span>
 
               <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
-                {formatDuration(lesson.duration)}
+                {locked ? "مقفول" : formatDuration(lesson.duration)}
               </span>
             </button>
           </li>

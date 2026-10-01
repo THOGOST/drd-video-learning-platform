@@ -15,8 +15,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { CourseCard } from "@/components/course-card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CourseGridSkeleton } from "@/components/course-grid-skeleton";
 import {
   AnimatedCounter,
   FadeIn,
@@ -57,6 +58,23 @@ export function HomeView() {
     queryKey: ["courses"],
     queryFn: () => api<{ courses: CourseListItem[] }>("/api/courses"),
   });
+
+  // شريط «أكمل من حيث توقفت» — بيانات اللوحة للمسجلين فقط
+  const { data: dash } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () =>
+      api<{
+        continueWatching: {
+          lessonId: string;
+          lessonTitle: string;
+          courseTitle: string;
+          courseSlug: string;
+          percent: number;
+        } | null;
+      }>("/api/dashboard"),
+    enabled: Boolean(user),
+  });
+  const continueWatching = dash?.continueWatching ?? null;
 
   const courses = data?.courses ?? [];
 
@@ -107,6 +125,46 @@ export function HomeView() {
         </div>
       </section>
 
+      {/* شريط أكمل من حيث توقفت */}
+      {user && continueWatching && (
+        <section className="mx-auto max-w-7xl px-4 -mt-6 relative z-10">
+          <FadeIn>
+            <Card className="border-primary/30 bg-gradient-to-l from-primary/10 via-card to-card shadow-lg">
+              <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <span className="hidden sm:flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
+                  <PlayCircle className="size-6" />
+                </span>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-xs font-medium text-primary">أكمل من حيث توقفت ▸</p>
+                  <p className="font-bold truncate">{continueWatching.lessonTitle}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    في كورس: {continueWatching.courseTitle}
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 max-w-md">
+                    <Progress value={continueWatching.percent} className="h-1.5" />
+                    <span className="text-[11px] font-semibold text-primary shrink-0">
+                      {continueWatching.percent}%
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  size="lg"
+                  className="gap-2 w-full sm:w-auto shrink-0"
+                  onClick={() =>
+                    navigate(
+                      buildPath.lesson(continueWatching.courseSlug, continueWatching.lessonId)
+                    )
+                  }
+                >
+                  <PlayCircle className="size-5" />
+                  استكمال المشاهدة
+                </Button>
+              </CardContent>
+            </Card>
+          </FadeIn>
+        </section>
+      )}
+
       {/* المميزات */}
       <section className="mx-auto max-w-7xl px-4 py-14">
         <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -145,15 +203,7 @@ export function HomeView() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="aspect-video rounded-xl" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-            ))}
-          </div>
+          <CourseGridSkeleton count={4} />
         ) : courses.length === 0 ? (
           <Card>
             <CardContent className="p-10 text-center text-muted-foreground space-y-2">

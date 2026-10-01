@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { authGuard, ERR, logActivity, ok } from "@/lib/api-helpers";
+import { authGuard, ERR, fail, logActivity, ok } from "@/lib/api-helpers";
+import { getPassedQuizIds, getQuizLessonIds } from "@/lib/quiz-lock";
 
 // GET /api/lessons/[id] — صفحة الدرس: الفيديو + الوصف + الروابط + التقدم (FR-04, FR-05)
 // يتطلب تسجيل دخول (FR-13)، ويقوم بالتسجيل في الكورس تلقائيًا عند أول زيارة
@@ -51,9 +52,30 @@ export async function GET(
     });
     const idx = siblings.findIndex((s) => s.id === lesson.id);
 
+    // قاعدة القفل: إن كان الدرس السابق مباشرةً يحتوي اختبارًا لم يجتزه المستخدم → منع الفتح (المدير مستثنى)
+    if (user.role !== "ADMIN" && idx > 0) {
+      const prev = siblings[idx - 1];
+      const quizLessonIds = await getQuizLessonIds(course.id);
+      if (quizLessonIds.has(prev.id)) {
+        const passed = await getPassedQuizIds(user.id, quizLessonIds);
+        if (!passed.has(prev.id)) {
+          return fail(
+            "لازم تجتاز اختبار الدرس السابق أولًا عشان تقدر تفتح الدرس ده",
+            423,
+            { prevLessonId: prev.id }
+          );
+        }
+      }
+    }
+
     const progress = await db.progress.findUnique({
       where: { userId_lessonId: { userId: user.id, lessonId: lesson.id } },
     });
+
+    // حالة الاختبار لهذا الدرس
+    const thisQuizLessonIds = new Set([lesson.id]);
+    const quizCount = await db.quizQuestion.count({ where: { lessonId: lesson.id } });
+    const passedSet = quizCount > 0 ? await getPassedQuizIds(user.id, thisQuizLessonIds) : new Set<string>();
 
     return ok({
       lesson: {
@@ -70,6 +92,7 @@ export async function GET(
       links: lesson.links,
       prev: idx > 0 ? siblings[idx - 1] : null,
       next: idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : null,
+      quiz: { enabled: quizCount > 0, passed: passedSet.has(lesson.id) },
       progress: progress
         ? {
             lastPosition: progress.lastPosition,

@@ -416,9 +416,20 @@ export function DashboardView() {
                             </div>
                           )}
                           {c.percent >= 100 && (
-                            <div className="flex items-center gap-1.5 text-xs text-primary font-semibold pt-1">
-                              <Trophy className="size-4" />
-                              أكملت هذا الكورس بالكامل — أحسنت!
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <span className="flex items-center gap-1.5 text-xs text-primary font-semibold">
+                                <Trophy className="size-4" />
+                                أكملت هذا الكورس بالكامل — أحسنت!
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5 h-8 text-xs"
+                                onClick={() => navigate(buildPath.certificate(c.slug))}
+                              >
+                                <Award className="size-3.5" />
+                                شهادتك هنا
+                              </Button>
                             </div>
                           )}
                         </div>

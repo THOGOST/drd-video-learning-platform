@@ -141,3 +141,25 @@ CREATE TRIGGER trg_progress_updated BEFORE UPDATE ON progress FOR EACH ROW EXECU
 --      FOR SELECT USING (status = 'PUBLISHED');
 --    CREATE POLICY "users read own progress" ON progress
 --      FOR SELECT USING (auth.uid()::text = user_id);
+
+-- ─── v1.1: اختبارات الدروس (اختيار من متعدد) ───
+CREATE TABLE IF NOT EXISTS quiz_questions (
+  id             TEXT PRIMARY KEY,
+  lesson_id      TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+  question       TEXT NOT NULL,
+  options        TEXT NOT NULL,              -- JSON array من نصوص الخيارات
+  correct_index  INTEGER NOT NULL DEFAULT 0,
+  order_index    INTEGER NOT NULL DEFAULT 0,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS quiz_questions_lesson_idx ON quiz_questions(lesson_id);
+
+CREATE TABLE IF NOT EXISTS quiz_passes (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  lesson_id  TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+  score      INTEGER NOT NULL DEFAULT 0,
+  total      INTEGER NOT NULL DEFAULT 0,
+  passed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS quiz_pass_user_lesson_uniq ON quiz_passes(user_id, lesson_id);

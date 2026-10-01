@@ -12,6 +12,7 @@ export type Route =
   | { view: "courses" }
   | { view: "course"; slug: string }
   | { view: "lesson"; slug: string; lessonId: string }
+  | { view: "certificate"; slug: string }
   | { view: "dashboard" }
   | { view: "login"; redirect?: string }
   | { view: "register"; redirect?: string }
@@ -28,6 +29,9 @@ function parseHash(hash: string): Route {
       if (parts[1] && parts[2] === "lessons" && parts[3])
         return { view: "lesson", slug: parts[1], lessonId: parts[3] };
       if (parts[1]) return { view: "course", slug: parts[1] };
+      return { view: "courses" };
+    case "certificate":
+      if (parts[1]) return { view: "certificate", slug: parts[1] };
       return { view: "courses" };
     case "dashboard":
       return { view: "dashboard" };
@@ -77,6 +81,7 @@ export const buildPath = {
   course: (slug: string) => `/courses/${encodeURIComponent(slug)}`,
   lesson: (slug: string, lessonId: string) =>
     `/courses/${encodeURIComponent(slug)}/lessons/${lessonId}`,
+  certificate: (slug: string) => `/certificate/${encodeURIComponent(slug)}`,
   dashboard: () => "/dashboard",
   login: (redirect?: string) => (redirect ? `/login/${redirect}` : "/login"),
   register: (redirect?: string) => (redirect ? `/register/${redirect}` : "/register"),

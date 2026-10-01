@@ -27,6 +27,7 @@ model User {
 
   enrollments CourseEnrollment[]
   progress    Progress[]
+  quizPasses  QuizPass[]
 
   @@map("users")
 }
@@ -67,6 +68,8 @@ model Lesson {
   course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   links    LessonLink[]
   progress Progress[]
+  quizQuestions QuizQuestion[]
+  quizPasses    QuizPass[]
 
   @@index([courseId, orderIndex], map: "lessons_course_order_idx")
   @@map("lessons")
@@ -144,4 +147,36 @@ model WorkflowRun {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("workflow_runs")
+}
+
+// ─── quiz_questions: أسئلة اختبار الدرس (اختيار من متعدد) ───
+model QuizQuestion {
+  id           String   @id @default(cuid())
+  lessonId     String   @map("lesson_id")
+  question     String
+  options      String // JSON array من نصوص الخيارات
+  correctIndex Int      @default(0) @map("correct_index")
+  orderIndex   Int      @default(0) @map("order_index")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId], map: "quiz_questions_lesson_idx")
+  @@map("quiz_questions")
+}
+
+// ─── quiz_passes: نجاح المستخدم في اختبار درس ───
+model QuizPass {
+  id       String   @id @default(cuid())
+  userId   String   @map("user_id")
+  lessonId String   @map("lesson_id")
+  score    Int      @default(0)
+  total    Int      @default(0)
+  passedAt DateTime @default(now()) @map("passed_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId], map: "quiz_pass_user_lesson_uniq")
+  @@map("quiz_passes")
 }

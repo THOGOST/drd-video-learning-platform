@@ -40,6 +40,7 @@ export type CourseLesson = {
   duration: number;
   progress: LessonProgress | null;
   status: "COMPLETED" | "IN_PROGRESS" | "NOT_STARTED";
+  locked?: boolean;
 };
 
 export type LessonLinkItem = {
@@ -51,9 +52,12 @@ export type LessonLinkItem = {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** بيانات إضافية من السيرفر (مثل prevLessonId عند قفل الدرس) */
+  data: Record<string, unknown>;
+  constructor(message: string, status: number, data: Record<string, unknown> = {}) {
     super(message);
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -64,7 +68,7 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(data.error || "حدث خطأ غير متوقع", res.status);
+    throw new ApiError(data.error || "حدث خطأ غير متوقع", res.status, data);
   }
   return data as T;
 }

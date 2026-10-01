@@ -10,11 +10,13 @@ import {
   ArrowUp,
   FolderGit2,
   HardDriveDownload,
+  HelpCircle,
   Link2,
   Loader2,
   Pencil,
   Plus,
   Trash2,
+  UploadCloud,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,6 +54,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api, formatDuration } from "@/lib/client";
 import { normalizeVideoInput } from "@/lib/drive";
+import { AdminQuizDialog } from "@/components/views/admin/admin-quiz-dialog";
 
 type AdminCourseLite = { id: string; title: string; status: string };
 type AdminLesson = {
@@ -118,6 +121,11 @@ export function AdminLessons() {
   // ─── حوار الروابط ───
   const [linksLesson, setLinksLesson] = useState<AdminLesson | null>(null);
 
+  // ─── حوار الاختبار + الاستيراد من Drive ───
+  const [quizLesson, setQuizLesson] = useState<AdminLesson | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [folderUrl, setFolderUrl] = useState("");
+
   const invalidateLessons = () => {
     void queryClient.invalidateQueries({ queryKey: ["admin", "lessons", activeCourseId] });
     void queryClient.invalidateQueries({ queryKey: ["admin", "courses"] });
@@ -163,6 +171,25 @@ export function AdminLessons() {
     onSuccess: () => invalidateLessons(),
   });
 
+  const importMutation = useMutation({
+    mutationFn: () =>
+      api<{ created: number; totalInFolder: number }>("/api/admin/lessons/import-drive", {
+        method: "POST",
+        body: JSON.stringify({ courseId: activeCourseId, folderUrl }),
+      }),
+    onSuccess: (res) => {
+      toast({
+        title: `تم استيراد ${res.created} درسًا من المجلد`,
+        description: `إجمالي ملفات الفيديو في المجلد: ${res.totalInFolder} — التكرار يتم تجاهله تلقائيًا.`,
+      });
+      setImportOpen(false);
+      setFolderUrl("");
+      invalidateLessons();
+    },
+    onError: (err: Error) =>
+      toast({ title: "خطأ في الاستيراد", description: err.message, variant: "destructive" }),
+  });
+
   const move = (index: number, dir: -1 | 1) => {
     const target = lessons[index + dir];
     const current = lessons[index];
@@ -206,6 +233,10 @@ export function AdminLessons() {
             ))}
           </SelectContent>
         </Select>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setImportOpen(true)} disabled={!activeCourseId}>
+          <UploadCloud className="size-4" />
+          استيراد من Drive
+        </Button>
         <Button size="sm" className="gap-1.5 sm:ms-auto" onClick={openCreate} disabled={!activeCourseId}>
           <Plus className="size-4" /> درس جديد
         </Button>
@@ -281,6 +312,16 @@ export function AdminLessons() {
                   </TableCell>
                   <TableCell className="text-end">
                     <div className="flex items-center justify-end gap-0.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label="إدارة اختبار الدرس"
+                        className="gap-1 h-8 px-2 text-xs text-primary hover:text-primary"
+                        onClick={() => setQuizLesson(l)}
+                      >
+                        <HelpCircle className="size-3.5" />
+                        اختبار
+                      </Button>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -456,6 +497,51 @@ export function AdminLessons() {
 
       {/* حوار الروابط */}
       <LinksDialog lesson={linksLesson} onClose={() => setLinksLesson(null)} />
+
+      {/* حوار اختبار الدرس */}
+      <AdminQuizDialog lesson={quizLesson} onClose={() => setQuizLesson(null)} />
+
+      {/* حوار الاستيراد من مجلد Drive */}
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UploadCloud className="size-4 text-primary" />
+              استيراد دروس من مجلد Google Drive
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              dir="ltr"
+              placeholder="https://drive.google.com/drive/folders/…"
+              value={folderUrl}
+              onChange={(e) => setFolderUrl(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              الصق لينك المجلد العام، وسيتم إنشاء درس لكل ملف فيديو (mp4، mov، webm…)
+              بالترتيب الأبجدي — مصدر الفيديو يُضبط على Drive تلقائيًا. المجلد لازم تكون
+              صلاحيته «أي شخص لديه الرابط»، والتكرار بين الملفات الموجودة يتم تجاهله.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>
+              إلغاء
+            </Button>
+            <Button
+              onClick={() => importMutation.mutate()}
+              disabled={!folderUrl.trim() || importMutation.isPending}
+              className="gap-1.5"
+            >
+              {importMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <FolderGit2 className="size-4" />
+              )}
+              استيراد
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* تأكيد الحذف */}
       <AlertDialog open={Boolean(deleting)} onOpenChange={(o) => !o && setDeleting(null)}>
