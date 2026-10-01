@@ -20,6 +20,8 @@ import {
   Download,
   ExternalLink,
   Info,
+  Maximize2,
+  Minimize2,
   Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/client";
+import { cn } from "@/lib/utils";
 
 const SAVE_INTERVAL_MS = 15_000; // حفظ كل 15 ثانية (10-20 حسب الوثيقة)
 const COMPLETION_PERCENT = 90; // قاعدة الاكتمال (القسم 11)
@@ -95,6 +98,24 @@ export function VideoPlayer({
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [resumeApplied, setResumeApplied] = useState(false);
+  // وضع المسرح: ملء شاشة بـ CSS — يعمل على كل الأجهزة حتى آيفون مع iframe درايف
+  // (آيفون يمنع fullscreen API لعناصر iframe، والبديل الوحيد الموثوق)
+  const [theater, setTheater] = useState(false);
+
+  // قفل تمرير الصفحة + خروج بزر Escape أثناء وضع المسرح
+  useEffect(() => {
+    if (!theater) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTheater(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [theater]);
 
   const initial = useRef(initialProgress);
 
@@ -385,7 +406,29 @@ export function VideoPlayer({
         </div>
       )}
 
-      <div className="relative rounded-xl overflow-hidden bg-black aspect-video border border-border/50 shadow-lg">
+      <div
+        className={cn(
+          "relative overflow-hidden bg-black border border-border/50 shadow-lg",
+          theater
+            ? "fixed inset-0 z-[90] rounded-none"
+            : "rounded-xl aspect-video"
+        )}
+      >
+        {(nativeActive || driveEmbedUrl) && (
+          <button
+            type="button"
+            onClick={() => setTheater((t) => !t)}
+            aria-label={theater ? "الخروج من ملء الشاشة" : "ملء الشاشة"}
+            className={cn(
+              "absolute z-20 rounded-lg bg-black/55 text-white/90 backdrop-blur-sm",
+              "hover:bg-black/75 hover:text-white transition-all",
+              "p-2 top-2 end-2",
+              theater && "p-2.5 top-3 end-3 bg-black/70"
+            )}
+          >
+            {theater ? <Minimize2 className="size-5" /> : <Maximize2 className="size-4" />}
+          </button>
+        )}
         {nativeActive ? (
           <video
             {...commonVideoProps}

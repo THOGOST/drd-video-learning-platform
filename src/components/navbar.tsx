@@ -30,7 +30,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
-      <div className="mx-auto max-w-7xl px-4 h-16 flex items-center gap-3">
+      <div className="mx-auto max-w-7xl px-2.5 sm:px-4 h-16 flex items-center gap-1.5 sm:gap-3">
         {/* الشعار */}
         <button
           type="button"
@@ -41,16 +41,16 @@ export function Navbar() {
           <span className="flex items-center justify-center size-9 rounded-xl bg-primary text-primary-foreground shadow-sm">
             <GraduationCap className="size-5" />
           </span>
-          <span className="leading-tight text-start">
-            <span className="block font-extrabold text-base sm:text-lg">منصة درس</span>
+          <span className="leading-tight text-start whitespace-nowrap">
+            <span className="block font-extrabold text-sm sm:text-lg">منصة درس</span>
             <span className="hidden sm:block text-[10px] text-muted-foreground font-medium">
               DRD Video Learning
             </span>
           </span>
         </button>
 
-        <nav className="flex items-center gap-0.5 sm:gap-1 me-auto" aria-label="التنقل الرئيسي">
-          <Button variant="ghost" size="sm" className="px-2 sm:px-4" onClick={() => navigate(buildPath.courses())}>
+        <nav className="flex items-center gap-0.5 sm:gap-1 me-auto min-w-0" aria-label="التنقل الرئيسي">
+          <Button variant="ghost" size="sm" className="px-2 sm:px-4 shrink-0" onClick={() => navigate(buildPath.courses())}>
             الكورسات
           </Button>
           {user && (
@@ -59,6 +59,7 @@ export function Navbar() {
               size="sm"
               onClick={() => navigate(buildPath.dashboard())}
               className="gap-1.5 px-2 sm:px-4"
+              aria-label="لوحتي"
             >
               <LayoutDashboard className="size-4" />
               <span className="hidden sm:inline">لوحتي</span>
@@ -70,6 +71,7 @@ export function Navbar() {
               size="sm"
               onClick={() => navigate(buildPath.admin())}
               className="gap-1.5 text-primary hover:text-primary px-2 sm:px-4"
+              aria-label="الإدارة"
             >
               <Settings2 className="size-4" />
               <span className="hidden sm:inline">الإدارة</span>
@@ -81,11 +83,12 @@ export function Navbar() {
         <Button
           variant="ghost"
           size="icon"
+          className="size-8 sm:size-9"
           aria-label="تبديل المظهر"
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         >
-          <Sun className="size-5 hidden dark:block" />
-          <Moon className="size-5 dark:hidden" />
+          <Sun className="size-4 sm:size-5 hidden dark:block" />
+          <Moon className="size-4 sm:size-5 dark:hidden" />
         </Button>
 
         {/* المستخدم */}
@@ -126,17 +129,22 @@ export function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate(buildPath.login())}
-              className="gap-1.5"
+              className="gap-1.5 px-2 sm:px-4"
+              aria-label="دخول"
             >
               <LogIn className="size-4" />
-              دخول
+              <span className="hidden sm:inline">دخول</span>
             </Button>
-            <Button size="sm" onClick={() => navigate(buildPath.register())} className="gap-1.5">
+            <Button
+              size="sm"
+              onClick={() => navigate(buildPath.register())}
+              className="gap-1.5 px-2.5 text-xs sm:text-sm sm:px-3"
+            >
               <UserPlus className="size-4" />
               حساب جديد
             </Button>
