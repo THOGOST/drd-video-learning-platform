@@ -111,3 +111,20 @@ Work Log:
 Stage Summary:
 - سبب فشل التسجيل: DATABASE_URL غير موجود في متغيرات بيئة Vercel (الكود سليم)
 - الحل متبقٍ على المستخدم: إضافة DATABASE_URL (رابط Connection Pooling من Supabase) + SESSION_SECRET ثم Redeploy — أو إرسال توكن Vercel + رابط الاتصال ليتولى الوكيل الإضافة والتحقق
+
+---
+Task ID: 6
+Agent: Main Agent (Super Z)
+Task: التحقق النهائي من التسجيل على الإنتاج بعد Redeploy (رد المستخدم: "تم")
+
+Work Log:
+- بعد Redeploy: /api/supabase/status على المشروعين = connection: ok
+- اختبار التسجيل على drd-video-learning-platform.vercel.app: نجح HTTP 200 — أُنشئ حساب prodtest01@drd.edu فعليًا في Supabase
+- تسجيل الدخول: الحساب الجديد 200 + admin@drd.edu 200
+- /api/courses: 200 مع بيانات الكورسات كاملة
+- اختبار teamcours.vercel.app: ما زال 503 "قاعدة البيانات غير مربوطة" — لأن متغيرات البيئة تُضاف لكل مشروع على حدة في Vercel، والمستخدم أضافها فقط لمشروع drd-video-learning-platform
+
+Stage Summary:
+- المشكلة الأصلية "مش عايز يعمل حساب جديد" — انحلّت على drd-video-learning-platform.vercel.app ✅ (تسجيل + دخول + كورسات كلها شغالة على قاعدة Supabase الحقيقية)
+- teamcours.vercel.app يظل 503 حتى يضيف المستخدم DATABASE_URL + SESSION_SECRET له أيضًا أو يحذفه (مشروع مكرر ل نفس الريبو)
+- توصية أمنية متبقية: تدوير التوكن وكلمة مرور DB بعد انتهاء الإعداد
