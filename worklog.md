@@ -95,3 +95,19 @@ Stage Summary:
 - الموقعان منشوران ويعملان: https://teamcours.vercel.app و https://drd-video-learning-platform.vercel.app
 - كل شيء أخضر عدا: DATABASE_URL و SESSION_SECRET غير مضافين في Vercel (dbUrl: False) — مسارات API التي تمس قاعدة البيانات ترجع 500 حتى يضاف DATABASE_URL (بكلمة مرور DB التي يعرفها المستخدم فقط)
 - التوكن والمفاتيح استُخدمت في الجلسة فقط ولم تُكتب في أي ملف متتبع
+
+---
+Task ID: 5
+Agent: Main Agent (Super Z)
+Task: تشخيص فشل إنشاء حساب جديد على الموقع المنشور وإصلاحه
+
+Work Log:
+- قارأ مستخدم: "مش عايز يعمل حساب جديد" — فحصت /api/auth/register و /api/auth/login و /api/courses على الإنتاج: كلها ترجع 500 عام
+- قراءة register/route.ts: الكود سليم؛ اختبار التسجيل محليًا نجح فعليًا (أنشئ حساب localsanity@drd.edu) → المشكلة ليست في الكود
+- تحسين تشخيصي: ERR.server() في api-helpers.ts يفحص process.env.DATABASE_URL ويرجع رسالة عربية واضحة (503) عند غيابه
+- Push fc6de1e → نشر ناجح على المشروعين
+- اختبار الإنتاج بعدها: "قاعدة البيانات غير مربوطة على السيرفر — أضف متغير DATABASE_URL..." → تأكيد قاطع أن DATABASE_URL غير مضاف في Vercel
+
+Stage Summary:
+- سبب فشل التسجيل: DATABASE_URL غير موجود في متغيرات بيئة Vercel (الكود سليم)
+- الحل متبقٍ على المستخدم: إضافة DATABASE_URL (رابط Connection Pooling من Supabase) + SESSION_SECRET ثم Redeploy — أو إرسال توكن Vercel + رابط الاتصال ليتولى الوكيل الإضافة والتحقق
