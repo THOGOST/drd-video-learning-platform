@@ -5,9 +5,9 @@ import sys
 
 from playwright.async_api import async_playwright
 
-BASE = "http://localhost:3000"
+BASE = "https://drd-video-learning-platform.vercel.app"
 OUT = "/home/z/my-project/scripts/dbtest/mobile-audit"
-LESSON = f"{BASE}/#/courses/javascript-basics/lessons/cmupp9iqn0005m5s6zo4cllpc"
+LESSON = f"{BASE}/#/courses/javascript-basics/lessons/lsn_js_01"
 
 results = []
 
