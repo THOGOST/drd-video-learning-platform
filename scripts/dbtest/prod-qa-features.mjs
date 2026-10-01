@@ -4,7 +4,9 @@
 // ============================================================
 const BASE = "https://drd-video-learning-platform.vercel.app";
 const ADMIN = { email: "admin@drd.edu", password: "Admin@123" };
-const STU = { email: "qa_auto_03@drd.edu", password: "Test@1234", name: "طالب اختبار آلي" };
+// طالب جديد فريد في كل تشغيلة — لازم يكون نظيفًا لاختبار القفل التسلسلي
+const RUN_ID = Date.now().toString(36);
+const STU = { email: `qa_${RUN_ID}@drd.edu`, password: "Test@1234", name: `طالب اختبار ${RUN_ID}` };
 
 const COURSE_SLUG = "javascript-basics1";
 const REAL_LESSON_ID = "cmupcklhq0003l804m2u19igd";
