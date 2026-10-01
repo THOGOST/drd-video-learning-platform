@@ -162,13 +162,14 @@ export function LessonView({ slug, lessonId }: { slug: string; lessonId: string 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
         {/* العمود الرئيسي */}
         <div className="space-y-4 min-w-0">
+          {/* المدة الحقيقية فقط — lastPosition موضع مشاهدة وليست مدة، واستخدامه كان يسبب إكمالًا زائفًا */}
           <VideoPlayer
             key={lesson.id}
             lessonId={lesson.id}
             videoSource={lesson.videoSource}
             videoUrl={lesson.videoUrl}
             driveFileId={lesson.driveFileId}
-            registeredDuration={lesson.duration || progress?.lastPosition || 0}
+            registeredDuration={lesson.duration || 0}
             initialProgress={progress}
             onProgressChange={handleProgressChange}
           />

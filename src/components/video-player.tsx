@@ -127,18 +127,28 @@ export function VideoPlayer({
   }, [lessonId, videoSource]);
 
   // مؤقت وضع Google Drive: نقيس زمن البقاء في الصفحة كتقدير تقريبي
+  // قاعدة أمان: عند غياب مدة الدرس المسجلة لا يتجاوز التقدير 89% —
+  // أي أن الإتمام التلقائي (≥90% على السيرفر) لا يحدث إلا إذا كانت المدة معروفة.
+  // بدون ذلك كان أي طالب يقعد في الصفحة ثوانٍ قليلة يُكمل درسه زورًا.
   useEffect(() => {
     if (videoSource !== "drive") return;
     driveStartRef.current = Date.now();
     lastDriveSentRef.current = Date.now();
 
+    const driveCap = registeredDuration > 0 ? registeredDuration : 600;
+    const maxEstimate = registeredDuration > 0 ? 99 : 89;
+
+    const drivePercent = () =>
+      Math.min(
+        maxEstimate,
+        Math.round((Math.floor((Date.now() - driveStartRef.current) / 1000) / driveCap) * 100)
+      );
+
     const tick = window.setInterval(() => {
       const elapsed = Math.floor((Date.now() - driveStartRef.current) / 1000);
-      const cap = registeredDuration > 0 ? registeredDuration : 600;
-      const percent = Math.min(99, Math.round((elapsed / cap) * 100));
       if (Date.now() - lastDriveSentRef.current >= SAVE_INTERVAL_MS && elapsed > 3) {
         lastDriveSentRef.current = Date.now();
-        void sendProgress(Math.min(elapsed, cap), percent);
+        void sendProgress(Math.min(elapsed, driveCap), drivePercent());
       }
     }, 5_000);
 
@@ -146,9 +156,8 @@ export function VideoPlayer({
       window.clearInterval(tick);
       // حفظ نهائي عند مغادرة الدرس
       const elapsed = Math.floor((Date.now() - driveStartRef.current) / 1000);
-      const cap = registeredDuration > 0 ? registeredDuration : 600;
       if (elapsed > 3) {
-        void sendProgress(Math.min(elapsed, cap), Math.min(99, Math.round((elapsed / cap) * 100)), {
+        void sendProgress(Math.min(elapsed, driveCap), drivePercent(), {
           silent: true,
         });
       }
